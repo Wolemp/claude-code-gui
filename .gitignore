@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+dist/
+build/
+*.spec
+*.egg-info/
+*.exe
+python/
+get-pip.py
+*.zip
+.env
+note_article.md
