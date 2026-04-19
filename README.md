@@ -31,25 +31,39 @@
 | **CLI** (デフォルト) | Claude Code ログイン済みでOK | Max Plan ($100-200/月) の範囲で利用。APIキー不要 |
 | **API** (フォールバック) | `sk-ant-` APIキー必要 | 従量課金。CLI未インストール時の代替 |
 
-## インストール
+## 起動方法
+
+### ワンクリック起動（Python不要）
+
+```
+launch.bat をダブルクリック
+```
+
+Pythonがなくてもポータブル版を自動ダウンロード→依存関係インストール→起動まで全自動。
+
+### Python環境がある場合
 
 ```bash
 git clone https://github.com/Wolemp/claude-code-gui.git
 cd claude-code-gui
 pip install -r requirements.txt
+python main.py
 ```
+
+### .exe ビルド（配布用）
+
+```bash
+build.bat をダブルクリック
+```
+
+`dist/ClaudeCodeGUI.exe` が生成されます。Python不要で配布可能。
 
 ### 必要なもの
 
-- Python 3.10 以上
 - **CLIモード**: `npm i -g @anthropic-ai/claude-code` でCLIをインストール → `claude login` でログイン
 - **APIモード** (オプション): Anthropic APIキー（[console.anthropic.com](https://console.anthropic.com/)）
 
 ## 使い方
-
-```bash
-python main.py
-```
 
 1. 起動するとネイティブウィンドウが開く
 2. 左サイドバーの「プロジェクトを選択」でフォルダを開く
@@ -92,15 +106,6 @@ python main.py
 - **システムプロンプト** — APIモード用のカスタム指示
 - **権限モード** — Default / Accept Edits / Plan / カスタム
 - **Session ID** — 現在のセッションID（読み取り専用）
-
-## .exe にビルド（配布用）
-
-```bash
-pip install pyinstaller
-pyinstaller --onefile --windowed --name ClaudeCodeGUI main.py
-```
-
-`dist/ClaudeCodeGUI.exe` が生成されます。Python不要で配布可能。
 
 ## 設定ファイル
 
