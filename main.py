@@ -51,6 +51,7 @@ CONFIG_FILE = CONFIG_DIR / "config.json"
 TABS_FILE = CONFIG_DIR / "tabs.json"
 
 MODELS = [
+    ("claude-opus-4-8", "Opus 4.8"),
     ("claude-opus-4-7", "Opus 4.7"),
     ("claude-opus-4-6", "Opus 4.6"),
     ("claude-sonnet-4-6", "Sonnet 4.6"),
@@ -117,7 +118,7 @@ class ChatTab:
     name: str = "New Chat"
     project_path: str = ""
     session_id: str = ""
-    model: str = "claude-opus-4-6"
+    model: str = "claude-opus-4-8"
     effort: str = "max"
     max_turns: int = 0
     custom_flags: str = ""
@@ -766,7 +767,8 @@ class Api:
                 self._js(f"onSystemMsg('{tid}','info','Usage: /effort max|xhigh|high|medium|low')")
         elif command == "/model":
             model_map = {
-                "opus": "claude-opus-4-6", "opus4.6": "claude-opus-4-6",
+                "opus": "claude-opus-4-8", "opus4.8": "claude-opus-4-8",
+                "opus4.7": "claude-opus-4-7", "opus4.6": "claude-opus-4-6",
                 "sonnet": "claude-sonnet-4-6", "sonnet4.6": "claude-sonnet-4-6",
                 "opus4": "claude-opus-4-20250514",
                 "sonnet4": "claude-sonnet-4-20250514",
@@ -1688,7 +1690,7 @@ function setStatus(cls,txt){document.getElementById('stDot').className='dot '+cl
 // ============================================================
 function createTabDOM(info){
   const id=info.id;
-  T[id]={name:info.name,model:info.model||'claude-opus-4-6',effort:info.effort||'max',
+  T[id]={name:info.name,model:info.model||'claude-opus-4-8',effort:info.effort||'max',
     projectPath:info.project_path||'',projectName:info.project_name||'',
     maxTurns:info.max_turns||0,customFlags:info.custom_flags||'',
     sysPrompt:info.system_prompt||'',sessionId:info.session_id||'',

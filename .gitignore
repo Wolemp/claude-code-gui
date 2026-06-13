@@ -11,3 +11,14 @@ get-pip.py
 *.zip
 .env
 note_article.md
+
+# Local / private — never publish
+.claude/
+.claude-harness/
+tests/
+_diag_*
+_minimal_webview_test.py
+_setup_venv.bat
+gui_test.txt
+requirements.lock
+TWITTER_draft*.md
