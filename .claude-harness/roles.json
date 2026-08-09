@@ -1,0 +1,32 @@
+{
+  "roles": [
+    {
+      "id": "manager",
+      "name": "Manager",
+      "icon": "🎛️",
+      "color": "#a78bfa",
+      "kind": "coordinator"
+    },
+    {
+      "id": "developer",
+      "name": "Developer",
+      "icon": "💻",
+      "color": "#34d399",
+      "kind": "worker"
+    },
+    {
+      "id": "marketing",
+      "name": "Marketing",
+      "icon": "📢",
+      "color": "#fb923c",
+      "kind": "worker"
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "icon": "🛡️",
+      "color": "#f87171",
+      "kind": "worker"
+    }
+  ]
+}
