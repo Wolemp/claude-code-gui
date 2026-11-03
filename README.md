@@ -11,12 +11,16 @@
 - **マルチタブ** — 複数の会話を並行して実行。各タブに独立したプロジェクト・セッション。
 - **ブラウザ不要** — PyWebviewによるネイティブウィンドウ。Electron不要、軽量。
 - **APIキー不要** — Claude Code CLI バックエンドなら Max Plan のログインで利用可能。
-- **モデル選択** — Opus 4.8 / 4.7 / 4.6 / Sonnet 4.6 / 4 / 3.7 / 3.5 / Haiku 4.5 / 3.5 / Opus 3 をタブごとに切り替え。GUIで変更すると実行中セッションにも即反映。新規タブは最新の Opus 4.8 がデフォルト。
-- **Effort制御** — Max / XHigh / High / Medium / Low の5段階。セッション開始時に自動適用、変更時も即反映。
-- **権限モード切替** — Plan（読み取り専用）/ Accept Edits（ファイル操作のみ）をナビバーからワンクリックで切替。
+- **CLI自動アップデート** — GUI起動時に `claude update` をバックグラウンド実行し、常に最新の Claude Code CLI で動作。設定でオフ可。
+- **全モデル対応** — バージョン固定（Opus 5.5 / Sonnet 5.5 / Haiku 5.5 / Fable 5.1 / Fable 5 / Opus 5 / Sonnet 5 / Opus 4.8〜4.0 / Sonnet 4.6〜4.0 / Haiku 4.5）と、CLIが解決するエイリアス（`default` / `best` / `opus` / `sonnet` / `haiku` / `fable` / `opusplan` / `opus[1m]` / `sonnet[1m]`）をタブごとに切替。GUIで変更すると実行中セッションにも即反映。新規タブは Opus 5.5。APIモードではエイリアスを各ファミリーの最新の固定バージョンに自動変換。
+- **Effort制御** — Low / Medium / High / XHigh / Max / Auto。`--effort` フラグで起動時に適用、変更時も即反映。
+- **セッション切替** — Ultracode（動的ワークフロー編成）/ Fast モード / 出力スタイル / サンドボックスを実行中セッションへ即時適用。
+- **権限モード6種** — Manual / Accept Edits / Plan / Auto / Don't Ask / Bypass Permissions。Plan・Accept Edits・Auto はナビバーからワンクリック切替。ツール単位の許可リストにも対応。
+- **起動オプションパネル** — `--append-system-prompt` `--tools` `--disallowedTools` `--fallback-model` `--autocompact` `--agent` `--mcp-config` `--worktree` `--restricted` `--safe-mode` など主要な `claude` 起動フラグをGUIから設定。**実際に渡される argv をプレビュー表示**。
+- **コマンドパレット** — `Ctrl+K` で Claude Code の全コマンド（117件）をカテゴリ別に検索・実行。Enter で入力欄に挿入、Shift+Enter で即送信。
 - **動的パーミッションボタン** — CLIの実際の選択肢をPTY画面からパースして動的にボタン生成。フィードバック評価にも対応。
 - **セッション管理** — クリア（表示のみ）/ セッション終了（PTY停止、履歴保持）/ 新規セッション（全リセット）の3段階。
-- **自動セッション初期化** — 起動時に `/remote-control` と設定済み effort を自動送信。
+- **Remote Control** — `--remote-control` で起動し、claude.ai から同じセッションを操作可能。
 - **ストリーミング応答** — リアルタイムで回答が表示。バックグラウンドタブにも通知ドット。
 - **ファイルツリー** — プロジェクト構造をサイドバーで確認、ワンクリックで閲覧。
 - **セッション継続** — `--resume` で会話の文脈を維持。アプリ再起動後も復元。
@@ -82,11 +86,14 @@ build.bat をダブルクリック
 | ↻ 新規セッション | `Ctrl+Shift+N` | 全リセット |
 | Plan | - | 読み取り専用モードに切替（トグル） |
 | Accept Edits | - | ファイル操作のみ許可モードに切替（トグル） |
+| Auto | - | 全自動（安全分類器付き）モードに切替（トグル） |
+| ⌨ コマンドパレット | `Ctrl+K` | Claude Code の全コマンドを検索して実行 |
 
 ### キーボードショートカット
 
 | キー | 動作 |
 |------|------|
+| `Ctrl + K` | コマンドパレット |
 | `Enter` | メッセージ送信 / 選択メニュー確定 |
 | `Shift + Enter` | 改行 |
 | `↑` `↓` | 選択メニューの項目を移動 |
@@ -101,17 +108,21 @@ build.bat をダブルクリック
 
 各タブで個別に設定可能:
 
-- **Max Turns** — エージェントの最大ターン数（0 = 無制限）
-- **カスタムCLIフラグ** — `--allowedTools` など任意のフラグ
-- **システムプロンプト** — APIモード用のカスタム指示
-- **権限モード** — Default / Accept Edits / Plan / カスタム
+- **カスタムCLIフラグ** — 任意のフラグを素通し
+- **システムプロンプト** — `--system-prompt` に渡すカスタム指示
+- **権限モード** — Manual / Accept Edits / Plan / Auto / Don't Ask / Bypass Permissions / 選択ツールのみ
+- **Remote Control** — claude.ai からの操作を許可
+- **セッション切替** — Ultracode / Fast モード / 出力スタイル / サンドボックス（実行中セッションへ即時適用）
+- **起動オプション** — グループ別に全起動フラグ。`起動コマンドをプレビュー` で実際の argv を確認可能（次回セッション開始時に適用）
 - **Session ID** — 現在のセッションID（読み取り専用）
+
+> `Max Turns` は、Claude Code が `--max-turns` を公式フラグ一覧（`claude --help`）から外したため削除しました。
 
 ## 設定ファイル
 
 ```
 ~/.claude-code-gui/
-  config.json    # グローバル設定（モード、APIキー）
+  config.json    # グローバル設定（モード、APIキー、言語、CLI自動アップデートのON/OFF）
   tabs.json      # タブ状態（各タブのプロジェクト、セッション、会話履歴）
 ```
 
