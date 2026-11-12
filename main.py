@@ -72,7 +72,8 @@ TABS_FILE = CONFIG_DIR / "tabs.json"
 #                   plan, `best`/`opusplan` are routing policies, and the
 #                   `[1m]` forms select the 1M-context variant of a family.
 #
-# Retired ids (Sonnet 3.5/3.7, Haiku 3.5, Opus 3) are deliberately absent —
+# Retired ids (Sonnet 3.5/3.7, Haiku 3.5, Opus 3, Opus 4/4.1, Sonnet 4) are
+# deliberately absent —
 # they 404 at the API and would hand the user a tab that cannot start.
 MODEL_PINNED = [
     ("claude-opus-5-5", "Opus 5.5"),
@@ -87,11 +88,8 @@ MODEL_PINNED = [
     ("claude-opus-4-7", "Opus 4.7"),
     ("claude-opus-4-6", "Opus 4.6"),
     ("claude-opus-4-5", "Opus 4.5"),
-    ("claude-opus-4-1", "Opus 4.1"),
-    ("claude-opus-4-0", "Opus 4"),
     ("claude-sonnet-4-6", "Sonnet 4.6"),
     ("claude-sonnet-4-5", "Sonnet 4.5"),
-    ("claude-sonnet-4-0", "Sonnet 4"),
     ("claude-haiku-4-5", "Haiku 4.5"),
 ]
 MODEL_ALIASES = [
@@ -118,6 +116,12 @@ MODEL_GROUPS = [
 # mid-project. Referenced by ChatTab and the JS fallback, so one edit here
 # propagates everywhere.
 DEFAULT_MODEL = "claude-opus-5-5"
+# Dated ids persisted by older builds -> current catalog id (tab deserialize).
+_LEGACY_MODEL_MAP = {
+    "claude-haiku-4-5-20251001": "claude-haiku-4-5",
+    "claude-sonnet-4-5-20250929": "claude-sonnet-4-5",
+    "claude-opus-4-5-20251101": "claude-opus-4-5",
+}
 # API mode (Anthropic SDK) only accepts concrete model ids, so each CLI alias
 # is mapped onto the newest pinned member of its family.
 _API_ALIAS_TARGET = {
@@ -248,8 +252,9 @@ LAUNCH_OPTIONS: list[dict] = [
      "kind": "bool"},
     {"key": "worktree", "group": "session", "flag": "--worktree",
      "kind": "optional"},
+    # Only honoured with --print (CLI help), hence print_only.
     {"key": "no_session_persistence", "group": "session",
-     "flag": "--no-session-persistence", "kind": "bool"},
+     "flag": "--no-session-persistence", "kind": "bool", "print_only": True},
     # Integrations
     {"key": "ide", "group": "integr", "flag": "--ide", "kind": "bool"},
     {"key": "chrome", "group": "integr", "flag": "--chrome", "kind": "bool"},
@@ -277,6 +282,8 @@ _LAUNCH_DEFAULTS: dict[str, Any] = {
     for o in LAUNCH_OPTIONS
 }
 _LAUNCH_BY_KEY: dict[str, dict] = {o["key"]: o for o in LAUNCH_OPTIONS}
+# List options entered one item per line (mirrors JS LINE_LIST_KEYS).
+_LAUNCH_LINE_LISTS = frozenset({"extra_dirs", "mcp_config"})
 # Hard caps so a pasted blob can't build a multi-megabyte argv.
 _LAUNCH_MAX_TEXT = 100000
 _LAUNCH_MAX_ITEMS = 64
@@ -321,7 +328,9 @@ def sanitize_launch(raw) -> dict:
             out[key] = bool(val)
         elif kind == "list":
             if isinstance(val, str):
-                val = val.split()
+                # Paths/JSON may contain spaces: these are one item per line.
+                val = (val.splitlines() if key in _LAUNCH_LINE_LISTS
+                       else val.split())
             if isinstance(val, (list, tuple)):
                 items = [str(v).strip() for v in val if str(v).strip()]
                 if key in ("tools", "disallowed_tools"):
@@ -640,12 +649,12 @@ _STRINGS_EXTRA = {
     "optTools": {"en": "Enabled built-in tools (empty = default set)", "ja": "有効な組込みツール (空=既定セット)", "zh": "启用的内置工具 (空=默认集)", "ko": "활성 내장 도구 (비움=기본 세트)"},
     "optDisallowedTools": {"en": "Denied tools", "ja": "禁止ツール", "zh": "禁用工具", "ko": "차단 도구"},
     "optAllowDangerousOptIn": {"en": "Offer \"skip all permissions\" as an option", "ja": "「全権限スキップ」を選択肢として許可", "zh": "允许\"跳过全部权限\"作为选项", "ko": "\"모든 권한 건너뛰기\"를 선택지로 허용"},
-    "optExtraDirs": {"en": "Extra working directories", "ja": "追加作業ディレクトリ", "zh": "额外工作目录", "ko": "추가 작업 디렉터리"},
+    "optExtraDirs": {"en": "Extra working directories (one per line)", "ja": "追加作業ディレクトリ (1行に1つ)", "zh": "额外工作目录 (每行一个)", "ko": "추가 작업 디렉터리 (한 줄에 하나)"},
     "optSettingsPath": {"en": "Extra settings file or JSON", "ja": "追加設定ファイル / JSON", "zh": "额外设置文件或 JSON", "ko": "추가 설정 파일 또는 JSON"},
     "optSettingSources": {"en": "Setting sources (user,project,local)", "ja": "設定ソース (user,project,local)", "zh": "设置来源 (user,project,local)", "ko": "설정 소스 (user,project,local)"},
     "optAgent": {"en": "Agent for this session", "ja": "このセッションのエージェント", "zh": "本会话的代理", "ko": "이 세션의 에이전트"},
     "optAgentsJson": {"en": "Custom agents (JSON or file path)", "ja": "カスタムエージェント (JSON / パス)", "zh": "自定义代理 (JSON 或路径)", "ko": "커스텀 에이전트 (JSON 또는 경로)"},
-    "optMcpConfig": {"en": "MCP config files / JSON", "ja": "MCP 設定ファイル / JSON", "zh": "MCP 配置文件 / JSON", "ko": "MCP 설정 파일 / JSON"},
+    "optMcpConfig": {"en": "MCP config files / JSON (one per line)", "ja": "MCP 設定ファイル / JSON (1行に1つ)", "zh": "MCP 配置文件 / JSON (每行一个)", "ko": "MCP 설정 파일 / JSON (한 줄에 하나)"},
     "optStrictMcpConfig": {"en": "Use only these MCP servers", "ja": "これらの MCP サーバーのみ使用", "zh": "仅使用这些 MCP 服务器", "ko": "이 MCP 서버만 사용"},
     "optSessionName": {"en": "Session display name", "ja": "セッション表示名", "zh": "会话显示名", "ko": "세션 표시 이름"},
     "optForkSession": {"en": "Fork on resume (new session id)", "ja": "再開時にフォーク (新セッション ID)", "zh": "恢复时分叉 (新会话 ID)", "ko": "재개 시 포크 (새 세션 ID)"},
@@ -737,6 +746,10 @@ class ChatTab:
         tab.toggles = sanitize_toggles(d.get("toggles"))
         # A model that has since been retired from the catalog would hand the
         # user a tab that cannot start - fall back to the current default.
+        # Dated legacy ids map onto their alias first.
+        legacy = _LEGACY_MODEL_MAP.get(tab.model)
+        if legacy in {m[0] for m in MODELS}:
+            tab.model = legacy
         if tab.model not in {m[0] for m in MODELS}:
             tab.model = DEFAULT_MODEL
         if tab.permission_mode not in {m[0] for m in PERMISSION_MODES}:
@@ -771,7 +784,7 @@ class PtySession:
         self.screen = pyte.HistoryScreen(120, 36, history=50000)
         self.screen.set_mode(pyte.modes.LNM)
         self.stream = pyte.Stream(self.screen)
-        cmd = ["claude", "--model", self.tab.model, "--verbose"]
+        cmd = [_claude_exe(), "--model", self.tab.model, "--verbose"]
         # `auto` means "let the model pick" - omit the flag entirely.
         if self.tab.effort and self.tab.effort != "auto":
             cmd += ["--effort", self.tab.effort]
@@ -936,6 +949,23 @@ class PtySession:
         self.api._js(f"onPtyDied('{tid}')")
 
 
+def _screen_says_bad_session(sess) -> bool:
+    """True when a PTY session's rendered screen (scrollback + display) shows
+    the CLI rejecting a --resume id as missing/invalid."""
+    try:
+        scr = sess.screen
+        lines = []
+        for hline in getattr(getattr(scr, "history", None), "top", []) or []:
+            lines.append("".join(hline[c].data or "" for c in sorted(hline.keys())))
+        lines.extend(scr.display)
+        text = "\n".join(lines).lower()
+    except Exception:
+        return False
+    if "no conversation found" in text:
+        return True
+    return "session" in text and ("not found" in text or "invalid" in text)
+
+
 # ---------------------------------------------------------------------------
 # File tree
 # ---------------------------------------------------------------------------
@@ -977,6 +1007,12 @@ def _build_tree(root: str, max_depth: int = 4, _depth: int = 0) -> list:
 _UPDATE_TIMEOUT_S = 300.0
 
 
+def _claude_exe() -> str:
+    """Resolved CLI path. On Windows npm installs `claude.cmd`, which a bare
+    "claude" argv[0] with shell=False cannot find."""
+    return shutil.which("claude") or "claude"
+
+
 def _run_claude(args: list[str], timeout: float) -> tuple[int, str]:
     """Run `claude <args>` detached from any console, returning (rc, output)."""
     flags = 0
@@ -985,7 +1021,7 @@ def _run_claude(args: list[str], timeout: float) -> tuple[int, str]:
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     try:
         proc = subprocess.run(
-            ["claude", *args],
+            [_claude_exe(), *args],
             stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True, encoding="utf-8", errors="replace",
@@ -1011,7 +1047,10 @@ def _cli_version() -> str:
         return ""
     # `claude --version` prints e.g. "2.1.310 (Claude Code)".
     m = re.search(r"\d+\.\d+\.\d+", out)
-    return m.group(0) if m else out.splitlines()[0].strip()[:40]
+    if m:
+        return m.group(0)
+    lines = out.splitlines()
+    return lines[0].strip()[:40] if lines else ""
 
 
 def _update_cli() -> dict:
@@ -1110,14 +1149,18 @@ class Api:
         try:
             if tab.pty_session:
                 tab.pty_session.kill()
+            resumed_id = tab.session_id
             tab.pty_session = PtySession(self, tab)
             tab.pty_session.start()
             self._js(f"showTerminal('{tid}')")
             # Wait a moment to see if it stays alive
             time.sleep(3)
             if not tab.pty_session.pty or not tab.pty_session.pty.isalive():
-                # Session died quickly — likely invalid session_id
-                if tab.session_id:
+                # Session died quickly. Only drop the session id when this was
+                # a --resume launch AND the CLI said the session is missing —
+                # any other early exit (bad flag, auth, crash) keeps it.
+                time.sleep(0.3)  # let the reader feed the final output to pyte
+                if resumed_id and _screen_says_bad_session(tab.pty_session):
                     tab.session_id = ""
                     self._persist()
                     # Retry as new session
@@ -1823,7 +1866,7 @@ class Api:
 
     def _build_cmd(self, tab: ChatTab, message: str) -> list:
         cmd = [
-            "claude", "-p", message,
+            _claude_exe(), "-p", message,
             "--output-format", "stream-json", "--verbose",
             "--model", tab.model,
         ]
@@ -1887,23 +1930,30 @@ class Api:
         if not _validate_cmd_fields(tab):
             self._js(f"onStreamEnd({json.dumps(tab_id)})")
             return
-        cwd = os.path.abspath(tab.project_path) if tab.project_path else None
-        # Build interactive command (no -p, no stream-json)
-        cmd_parts = ["claude", "--model", tab.model]
-        if tab.effort and tab.effort != "auto":
-            cmd_parts += ["--effort", tab.effort]
-        if tab.session_id:
-            cmd_parts += ["--resume", tab.session_id]
-        cmd_parts += _add_dir_args(tab)
-        cmd_parts += _permission_mode_args(tab)
-        cmd_parts += _launch_flags(tab, interactive=True)
-        # Open in a new visible console window - list args, shell=False, so no
-        # field can be interpreted by a shell.
-        subprocess.Popen(
-            cmd_parts,
-            cwd=cwd,
-            creationflags=subprocess.CREATE_NEW_CONSOLE,
-        )
+        try:
+            cwd = os.path.abspath(tab.project_path) if tab.project_path else None
+            # Build interactive command (no -p, no stream-json)
+            cmd_parts = [_claude_exe(), "--model", tab.model]
+            if tab.effort and tab.effort != "auto":
+                cmd_parts += ["--effort", tab.effort]
+            if tab.session_id:
+                cmd_parts += ["--resume", tab.session_id]
+            cmd_parts += _add_dir_args(tab)
+            cmd_parts += _permission_mode_args(tab)
+            cmd_parts += _launch_flags(tab, interactive=True)
+            # Open in a new visible console window - list args, shell=False, so no
+            # field can be interpreted by a shell.
+            subprocess.Popen(
+                cmd_parts,
+                cwd=cwd,
+                creationflags=subprocess.CREATE_NEW_CONSOLE,
+            )
+        except FileNotFoundError:
+            self._js(f"onStreamError({json.dumps(tab_id)},{json.dumps(self._t('cli_not_found'))})")
+            return
+        except Exception as e:
+            self._js(f"onStreamError({json.dumps(tab_id)},{json.dumps(str(e))})")
+            return
         self._js(f"onStreamEnd({json.dumps(tab_id)})")
 
     def _send_cli(self, tab: ChatTab, message: str):
@@ -1917,15 +1967,27 @@ class Api:
             env = os.environ.copy()
             if tab.effort and tab.effort != "auto":
                 env["CLAUDE_CODE_EFFORT_LEVEL"] = tab.effort
+            # npm installs resolve to claude.cmd, which Windows runs through
+            # cmd.exe: a chat message containing `"` plus `&`/`|` would then be
+            # parsed as shell syntax. Feed the prompt on stdin instead.
+            via_stdin = cmd[0].lower().endswith((".cmd", ".bat"))
+            if via_stdin:
+                cmd = [cmd[0], "-p"] + cmd[3:]
             tab.process = subprocess.Popen(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 # Close stdin explicitly. `claude -p <prompt>` still polls
                 # stdin for piped input and waits ~3s before giving up, so an
                 # inherited/open stdin cost every message a 3-second stall.
-                stdin=subprocess.DEVNULL,
+                stdin=subprocess.PIPE if via_stdin else subprocess.DEVNULL,
                 cwd=tab.project_path or None,
                 text=True, encoding="utf-8", errors="replace", env=env,
             )
+            if via_stdin:
+                try:
+                    tab.process.stdin.write(message)
+                    tab.process.stdin.close()
+                except OSError:
+                    pass
             full = ""
             shown_tools = set()
             tool_names = {}
@@ -3395,6 +3457,8 @@ function optLabelKey(key){
   return 'opt'+key.split('_').map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join('');
 }
 function launchFieldId(key){return 'lo_'+key;}
+// List fields entered one item per line (others stay whitespace-separated).
+const LINE_LIST_KEYS=['extra_dirs','mcp_config'];
 function toggleFieldId(key){return 'tg_'+key;}
 
 function buildLaunchPanel(){
@@ -3429,7 +3493,8 @@ function buildLaunchPanel(){
 }
 
 // One control for one spec entry. Kinds mirror the Python side exactly:
-// bool -> checkbox, list -> multi-select (tools) or space-separated text,
+// bool -> checkbox, list -> multi-select (tools), one-per-line textarea
+// (LINE_LIST_KEYS) or space-separated text,
 // select -> dropdown, text/optional -> single-line input.
 function renderOptRow(o,id){
   const wrap=document.createElement('div');
@@ -3469,6 +3534,12 @@ function renderOptRow(o,id){
       sel.appendChild(og);
     });
     wrap.appendChild(sel);
+  }else if(o.kind==='list'&&LINE_LIST_KEYS.includes(o.key)){
+    // Paths may contain spaces and MCP config may be inline JSON: one per line.
+    const ta=document.createElement('textarea');
+    ta.id=id;ta.rows=2;ta.spellcheck=false;
+    if(o.flag)ta.placeholder=o.flag;
+    wrap.appendChild(ta);
   }else{
     const inp=document.createElement('input');
     inp.type='text';inp.id=id;inp.spellcheck=false;
@@ -3495,6 +3566,7 @@ function collectLaunch(){
     if(o.kind==='bool'){out[o.key]=!!el.checked;}
     else if(o.kind==='list'){
       if(el.multiple){out[o.key]=Array.from(el.selectedOptions).map(x=>x.value);}
+      else if(LINE_LIST_KEYS.includes(o.key)){out[o.key]=(el.value||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean);}
       else{out[o.key]=(el.value||'').split(/\s+/).filter(Boolean);}
     }else{out[o.key]=el.value||'';}
   });
@@ -3518,7 +3590,7 @@ function fillLaunch(launch,toggles){
     else if(o.kind==='list'){
       const arr=Array.isArray(v)?v:[];
       if(el.multiple){Array.from(el.options).forEach(op=>{op.selected=arr.includes(op.value);});}
-      else{el.value=arr.join(' ');}
+      else{el.value=arr.join(LINE_LIST_KEYS.includes(o.key)?'\n':' ');}
     }else{el.value=v||'';}
   });
   TOGGLE_SPEC.forEach(tg=>{
@@ -3648,10 +3720,10 @@ function renderCmdList(){
   const sel=box.querySelector('.ac-item.sel');if(sel)sel.scrollIntoView({block:'nearest'});
 }
 function cmdKey(e){
-  if(e.key==='ArrowDown'){e.preventDefault();cmdSel=Math.min(cmdSel+1,cmdRows.length-1);renderCmdList();}
-  else if(e.key==='ArrowUp'){e.preventDefault();cmdSel=Math.max(cmdSel-1,0);renderCmdList();}
-  else if(e.key==='Enter'){e.preventDefault();pickCmd(cmdSel,e.shiftKey);}
-  else if(e.key==='Escape'){e.preventDefault();closeCmdPalette();}
+  if(e.key==='ArrowDown'){e.preventDefault();e.stopPropagation();cmdSel=Math.min(cmdSel+1,cmdRows.length-1);renderCmdList();}
+  else if(e.key==='ArrowUp'){e.preventDefault();e.stopPropagation();cmdSel=Math.max(cmdSel-1,0);renderCmdList();}
+  else if(e.key==='Enter'){e.preventDefault();e.stopPropagation();pickCmd(cmdSel,e.shiftKey);}
+  else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeCmdPalette();}
 }
 // Enter inserts the command into the composer (so args can be typed);
 // Shift+Enter sends it straight through.
@@ -3728,6 +3800,8 @@ document.addEventListener('keydown',(e)=>{
   else if(e.ctrlKey&&!e.shiftKey&&e.key==='Tab'){e.preventDefault();cycleTab(1);}
   else if(e.ctrlKey&&e.shiftKey&&e.key==='Tab'){e.preventDefault();cycleTab(-1);}
   else if(e.key==='Escape'){
+    // Command palette open: Escape only closes it, never reaches the PTY.
+    if(document.getElementById('cmdModal').classList.contains('open')){closeCmdPalette();return;}
     // Terminal mode: send Escape to PTY (interrupts Claude Code)
     if(act&&T[act]&&T[act].termActive){pywebview.api.pty_input(act,'\x1b');return;}
     // Stop streaming first

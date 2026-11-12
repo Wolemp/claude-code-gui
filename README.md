@@ -12,7 +12,7 @@
 - **ブラウザ不要** — PyWebviewによるネイティブウィンドウ。Electron不要、軽量。
 - **APIキー不要** — Claude Code CLI バックエンドなら Max Plan のログインで利用可能。
 - **CLI自動アップデート** — GUI起動時に `claude update` をバックグラウンド実行し、常に最新の Claude Code CLI で動作。設定でオフ可。
-- **全モデル対応** — バージョン固定（Opus 5.5 / Sonnet 5.5 / Haiku 5.5 / Fable 5.2 / Fable 5.1 / Fable 5 / Opus 5 / Sonnet 5 / Opus 4.8〜4.0 / Sonnet 4.6〜4.0 / Haiku 4.5）と、CLIが解決するエイリアス（`default` / `best` / `opus` / `sonnet` / `haiku` / `fable` / `opusplan` / `opus[1m]` / `sonnet[1m]`）をタブごとに切替。GUIで変更すると実行中セッションにも即反映。新規タブは Opus 5.5。APIモードではエイリアスを各ファミリーの最新の固定バージョンに自動変換。
+- **全モデル対応** — バージョン固定（Opus 5.5 / Sonnet 5.5 / Haiku 5.5 / Fable 5.2 / Fable 5.1 / Fable 5 / Opus 5 / Sonnet 5 / Opus 4.8〜4.5 / Sonnet 4.6・4.5 / Haiku 4.5）と、CLIが解決するエイリアス（`default` / `best` / `opus` / `sonnet` / `haiku` / `fable` / `opusplan` / `opus[1m]` / `sonnet[1m]`）をタブごとに切替。GUIで変更すると実行中セッションにも即反映。新規タブは Opus 5.5。APIモードではエイリアスを各ファミリーの最新の固定バージョンに自動変換。
 - **Effort制御** — Low / Medium / High / XHigh / Max / Auto。`--effort` フラグで起動時に適用、変更時も即反映。
 - **セッション切替** — Ultracode（動的ワークフロー編成）/ Fast モード / 出力スタイル / サンドボックスを実行中セッションへ即時適用。
 - **権限モード6種** — Manual / Accept Edits / Plan / Auto / Don't Ask / Bypass Permissions。Plan・Accept Edits・Auto はナビバーからワンクリック切替。ツール単位の許可リストにも対応。
