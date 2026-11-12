@@ -14,13 +14,25 @@ if exist "python\python.exe" (
 
 rem === Check system Python ===
 python --version >nul 2>&1
-if not errorlevel 1 (
-    echo   [OK] Python found
-    pip install pywebview pywinpty pyte --quiet 2>nul
-    pip install anthropic --quiet 2>nul
-    python main.py
-    exit /b
-)
+if errorlevel 1 goto NO_PYTHON
+echo   [OK] Python found
+python --version
+echo   [STEP] checking deps...
+python -c "import webview, winpty, pyte" >nul 2>&1
+if errorlevel 1 goto INSTALL_DEPS
+echo   [OK] deps already installed, skipping pip
+goto RUN_APP
+:INSTALL_DEPS
+echo   [STEP] installing missing deps (this may take a minute)...
+pip install pywebview pywinpty pyte
+pip install anthropic
+:RUN_APP
+echo   [STEP] launching main.py...
+python -u main.py
+echo   [EXIT] main.py exited with code %errorlevel%
+pause
+exit /b
+:NO_PYTHON
 
 rem === No Python - download portable version ===
 echo.
