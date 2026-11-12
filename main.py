@@ -78,6 +78,7 @@ MODEL_PINNED = [
     ("claude-opus-5-5", "Opus 5.5"),
     ("claude-sonnet-5-5", "Sonnet 5.5"),
     ("claude-haiku-5-5", "Haiku 5.5"),
+    ("claude-fable-5-2", "Fable 5.2"),
     ("claude-fable-5-1", "Fable 5.1"),
     ("claude-fable-5", "Fable 5"),
     ("claude-opus-5", "Opus 5"),
@@ -122,7 +123,7 @@ DEFAULT_MODEL = "claude-opus-5-5"
 _API_ALIAS_TARGET = {
     "default": DEFAULT_MODEL, "best": DEFAULT_MODEL,
     "opus": "claude-opus-5-5", "sonnet": "claude-sonnet-5-5",
-    "haiku": "claude-haiku-5-5", "fable": "claude-fable-5-1",
+    "haiku": "claude-haiku-5-5", "fable": "claude-fable-5-2",
     "opusplan": "claude-opus-5-5",
     "opus[1m]": "claude-opus-5-5", "sonnet[1m]": "claude-sonnet-5-5",
 }
